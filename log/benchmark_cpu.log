@@ -1,0 +1,36 @@
+/share/huangshan/mamba-2.8b-hf prompt processing + decoding time: 29935.02ms
+/share/huangshan/mamba-2.8b-hf prompt processing + decoding time: 210135.26ms
+/share/huangshan/mamba-2.8b-hf prompt processing + decoding time: 815417.20ms
+
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 28510.59ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 217490.58ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 874367.40ms
+
+#########prefill + decode##########
+/share/huangshan/mamba-2.8b-hf prompt processing + decoding time: 791827.36ms
+/share/huangshan/mamba-1.4b-hf prompt processing + decoding time: 744404.36ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 868918.17ms
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 26785.88ms
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 12883.24ms
+
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 1045.99ms
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 4979.13ms
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 19802.16ms
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 36544.34ms
+/share/huangshan/mamba-370m-hf prompt processing + decoding time: 76453.40ms
+
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 479.82ms
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 2039.65ms
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 8198.45ms
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 16506.29ms
+/share/huangshan/mamba-130m-hf prompt processing + decoding time: 32645.23ms
+
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 27980.93ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 214750.76ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 859150.07ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 1734600.61ms
+/share/huangshan/mamba-790m-hf prompt processing + decoding time: 3470103.44ms
+
+/share/huangshan/mamba-1.4b-hf prompt processing + decoding time: 744430.47ms
+/share/huangshan/mamba-1.4b-hf prompt processing + decoding time: 723064.53ms
+/share/huangshan/mamba-1.4b-hf prompt processing + decoding time: 766198.26ms

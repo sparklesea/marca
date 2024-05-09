@@ -1,0 +1,122 @@
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 64, generation length: 1
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 48.53ms
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 512, generation length: 1
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 51.42ms
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 2048, generation length: 1
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 198.79ms
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 4096, generation length: 1
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 423.49ms
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 8192, generation length: 1
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 868.93ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 64, generation length: 1
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 35.17ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 512, generation length: 1
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 36.54ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 2048, generation length: 1
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 108.74ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 4096, generation length: 1
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 214.16ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 8192, generation length: 1
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 432.17ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 64, generation length: 1
+/share/huangshan/mamba-790m prompt processing + decoding time: 36.86ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 512, generation length: 1
+/share/huangshan/mamba-790m prompt processing + decoding time: 36.78ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 2048, generation length: 1
+/share/huangshan/mamba-790m prompt processing + decoding time: 68.11ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 4096, generation length: 1
+/share/huangshan/mamba-790m prompt processing + decoding time: 137.19ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 8192, generation length: 1
+/share/huangshan/mamba-790m prompt processing + decoding time: 259.06ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 64, generation length: 1
+/share/huangshan/mamba-370m prompt processing + decoding time: 35.50ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 512, generation length: 1
+/share/huangshan/mamba-370m prompt processing + decoding time: 35.73ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 2048, generation length: 1
+/share/huangshan/mamba-370m prompt processing + decoding time: 38.37ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 4096, generation length: 1
+/share/huangshan/mamba-370m prompt processing + decoding time: 70.74ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 8192, generation length: 1
+/share/huangshan/mamba-370m prompt processing + decoding time: 139.81ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 64, generation length: 1
+/share/huangshan/mamba-130m prompt processing + decoding time: 18.87ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 512, generation length: 1
+/share/huangshan/mamba-130m prompt processing + decoding time: 19.19ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 2048, generation length: 1
+/share/huangshan/mamba-130m prompt processing + decoding time: 18.90ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 4096, generation length: 1
+/share/huangshan/mamba-130m prompt processing + decoding time: 24.91ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 8192, generation length: 1
+/share/huangshan/mamba-130m prompt processing + decoding time: 46.79ms
+
+#################prefill + decode#############
+Loading model /share/huangshan/mamba-2.8b
+Number of parameters: 2768345600
+Prompt length: 2048, generation length: 101
+/share/huangshan/mamba-2.8b prompt processing + decoding time: 4734.20ms
+Loading model /share/huangshan/mamba-1.4b
+Number of parameters: 1372178432
+Prompt length: 2048, generation length: 101
+/share/huangshan/mamba-1.4b prompt processing + decoding time: 3491.18ms
+Loading model /share/huangshan/mamba-790m
+Number of parameters: 793204224
+Prompt length: 2048, generation length: 101
+/share/huangshan/mamba-790m prompt processing + decoding time: 3418.99ms
+Loading model /share/huangshan/mamba-370m
+Number of parameters: 371516416
+Prompt length: 2048, generation length: 101
+/share/huangshan/mamba-370m prompt processing + decoding time: 3380.55ms
+Loading model /share/huangshan/mamba-130m
+Number of parameters: 129135360
+Prompt length: 2048, generation length: 101
+/share/huangshan/mamba-130m prompt processing + decoding time: 1703.41ms

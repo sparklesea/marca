@@ -27,42 +27,37 @@ parser.add_argument("--repetition-penalty", type=float, default=1.0)
 parser.add_argument("--batch", type=int, default=1)
 args = parser.parse_args()
 
-repeats = 3
-device = "cuda"
+warmup = 5
+repeats = 100
+# device = "cuda"
+device = "cpu"
 dtype = torch.float16
 
 print(f"Loading model {args.model_name}")
-# is_mamba = args.model_name.startswith("state-spaces/mamba-")
-is_mamba = True
-if is_mamba:
-    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
+
+is_7b = args.model_name.endswith("-rw")
+tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
+if not is_7b:
     model = MambaLMHeadModel.from_pretrained(args.model_name, device=device, dtype=dtype)
 else:
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map={"": device}, torch_dtype=dtype)
-
-# is_7b = args.model_name.endwith("-rw")
-# tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
-# if not is_7b:
-#     model = MambaLMHeadModel.from_pretrained(args.model_name, device=device, dtype=dtype)
-# else:
-#     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-#     model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map={"": device}, torch_dtype=dtype)
+    # model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map='balanced', torch_dtype=dtype)
+    # model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map='auto', torch_dtype=dtype)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=dtype)
 
 model.eval()
 print(f"Number of parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
 torch.random.manual_seed(114514)
 if args.prompt is None:
-    input_ids = torch.randint(1, 50277, (args.batch, args.promptlen), dtype=torch.long, device="cuda")
-    attn_mask = torch.ones_like(input_ids, dtype=torch.long, device="cuda")
+    input_ids = torch.randint(1, 50277, (args.batch, args.promptlen), dtype=torch.long, device=device)
+    attn_mask = torch.ones_like(input_ids, dtype=torch.long, device=device)
 else:
     tokens = tokenizer(args.prompt, return_tensors="pt")
     input_ids = tokens.input_ids.to(device=device)
     attn_mask = tokens.attention_mask.to(device=device)
 max_length = input_ids.shape[1] + args.genlen
 
-if is_mamba:
+if not is_7b:
     fn = lambda: model.generate(
         input_ids=input_ids,
         max_length=max_length,
@@ -90,7 +85,9 @@ else:
         top_p=args.topp,
         repetition_penalty=args.repetition_penalty,
     )
-out = fn()
+for _ in range(warmup):
+    out = fn()
+
 if args.prompt is not None:
     print(tokenizer.batch_decode(out.sequences.tolist()))
 
@@ -100,10 +97,22 @@ for _ in range(repeats):
     fn()
 torch.cuda.synchronize()
 print(f"Prompt length: {len(input_ids[0])}, generation length: {len(out.sequences[0]) - len(input_ids[0])}")
-print(f"{args.model_name} prompt processing + decoding time: {(time.time() - start) / repeats * 1000:.0f}ms")
+print(f"{args.model_name} prompt processing + decoding time: {(time.time() - start) / repeats * 1000:.2f}ms")
+
+
+
+
 # python benchmarks/benchmark_generation_mamba_simple.py --model-name "/share/huangshan/mamba-2.8b" --prompt "The capital of France is" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
 # python evals/lm_harness_eval.py --model mamba --model_args pretrained=/share/huangshan/mamba-2.8b --tasks wikitext --device cuda --batch_size 1
 # CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark_generation_mamba_simple.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --promptlen 10 --genlen 10
 # python evals/lm_harness_eval.py --model mamba --model_args pretrained=/share/huangshan/mamba-2.8b --tasks wikitext,lambada_openai,piqa,winogrande,arc_easy,hellaswag --device cuda --batch_size 1
 
 # CUDA_VISIBLE_DEVICES=6,7 python evals/lm_harness_eval_7b.py --model mamba --model_args pretrained=/share/huangshan/mamba-7b-rw --tasks wikitext --device cuda --batch_size 64
+
+# python benchmarks/benchmark_generation_mamba_simple.py --model-name "/share/huangshan/mamba-2.8b" --prompt "The capital of France is" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
+
+# CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-7b-rw" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 
+# CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512
+# CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 
+# CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 
+# CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 

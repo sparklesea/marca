@@ -1,0 +1,29 @@
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 2048 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 4096 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-2.8b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 8192 >> benchmark.log
+
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 2048 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 4096 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-1.4b" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 8192 >> benchmark.log
+
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 2048 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 4096 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-790m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 8192 >> benchmark.log
+
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-370m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-370m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-370m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 2048 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-370m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 4096 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-370m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 8192 >> benchmark.log
+
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 64 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 512 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 2048 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 4096 >> benchmark.log
+CUDA_VISIBLE_DEVICES=7 python benchmarks/benchmark.py --model-name "/share/huangshan/mamba-130m" --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 --genlen 1 --promptlen 8192 >> benchmark.log

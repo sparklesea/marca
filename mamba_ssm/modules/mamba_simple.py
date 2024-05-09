@@ -142,7 +142,8 @@ class Mamba(nn.Module):
 
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
         # In the backward pass we write dx and dz next to each other to avoid torch.cat
-        if self.use_fast_path and causal_conv1d_fn is not None and inference_params is None:  # Doesn't support outputting the states
+        if False:
+        # if self.use_fast_path and causal_conv1d_fn is not None and inference_params is None:  # Doesn't support outputting the states
             out = mamba_inner_fn(
                 xz,
                 self.conv1d.weight,
@@ -165,7 +166,8 @@ class Mamba(nn.Module):
                 # If we just take x[:, :, -self.d_conv :], it will error if seqlen < self.d_conv
                 # Instead F.pad will pad with zeros if seqlen < self.d_conv, and truncate otherwise.
                 conv_state.copy_(F.pad(x, (self.d_conv - x.shape[-1], 0)))  # Update state (B D W)
-            if causal_conv1d_fn is None:
+            # if causal_conv1d_fn is None:
+            if causal_conv1d_fn is not None:
                 x = self.act(self.conv1d(x)[..., :seqlen])
             else:
                 assert self.activation in ["silu", "swish"]
@@ -212,7 +214,8 @@ class Mamba(nn.Module):
         x, z = xz.chunk(2, dim=-1)  # (B D)
 
         # Conv step
-        if causal_conv1d_update is None:
+        # if causal_conv1d_update is None:
+        if causal_conv1d_update is not None:
             conv_state.copy_(torch.roll(conv_state, shifts=-1, dims=-1))  # Update state (B D W)
             conv_state[:, :, -1] = x
             x = torch.sum(conv_state * rearrange(self.conv1d.weight, "d 1 w -> d w"), dim=-1)  # (B D)
@@ -235,9 +238,17 @@ class Mamba(nn.Module):
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
 
         # SSM step
-        if selective_state_update is None:
+        # if selective_state_update is None:
+        if selective_state_update is not None:
             # Discretize A and B
+            # import matplotlib.pyplot as plt
+            # plt.hist((dt + self.dt_proj.bias.to(dtype=dt.dtype)).flatten().cpu().numpy(), bins=100, density=True)
+            # plt.savefig(f'/home/huangshan/huangshan/research/mamba/fig/sfp_input/{self.layer_idx}_sfp_input')
+            # plt.close()
             dt = F.softplus(dt + self.dt_proj.bias.to(dtype=dt.dtype))
+            # plt.hist(torch.einsum("bd,dn->bdn", dt, A).flatten().cpu().numpy(), bins=100, density=True)
+            # plt.savefig(f'/home/huangshan/huangshan/research/mamba/fig/exp_input/{self.layer_idx}_exp_input')
+            # plt.close()
             dA = torch.exp(torch.einsum("bd,dn->bdn", dt, A))
             dB = torch.einsum("bd,bn->bdn", dt, B)
             ssm_state.copy_(ssm_state * dA + rearrange(x, "b d -> b d 1") * dB)
@@ -330,9 +341,12 @@ class Block(nn.Module):
             hidden_states: the sequence to the encoder layer (required).
             residual: hidden_states = Mixer(LN(residual))
         """
-        if not self.fused_add_norm:
+        # if not self.fused_add_norm:
+        if True:
             residual = (hidden_states + residual) if residual is not None else hidden_states
+            # print("block residual: ", residual.shape)
             hidden_states = self.norm(residual.to(dtype=self.norm.weight.dtype))
+            # print("block norm: ", hidden_states.shape)
             if self.residual_in_fp32:
                 residual = residual.to(torch.float32)
         else:

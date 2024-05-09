@@ -24,6 +24,54 @@ inline __device__ float4 operator+(const float4 & a, const float4 & b){
     return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};
 }
 
+// inline __device__ float fast_exp(float y) {
+//     float d;
+//     *(reinterpret_cast<short*>(&d) + 0) = 0;
+//     *(reinterpret_cast<short*>(&d) + 1) = static_cast<short>(184 * y + (16256-7));
+//     return d;
+// }
+
+inline __device__ float fast_exp(float y) {
+    union
+    {
+        uint32_t i;
+        float f;
+    }v;
+    
+    v.i=((1<<23)*(1.4426950409*y+126.94201519f));
+    return v.f + 0.0285784f;
+    // return v.f;
+}
+
+inline __device__ float fast_softplus(float y){
+    union{
+        uint32_t i;
+        float f;
+    }v;
+    v.i=((1<<23)*(1.4426950409*y+126.94201519f));
+    return v.f*(1-v.f*(0.5+v.f*(0.33333333333*-0.75*v.f)));
+}
+
+// inline __device__ float fast_softplus(float y){
+//     union{
+//         uint32_t i;
+//         float f;
+//     }v;
+//     v.i=((1<<23)*(1.4426950409*y+126.94201519f));
+//     v.f+=(1-0.024);
+//     // v.f+=1;
+//     return (((float)v.i)/(1<<23)-126.94201519f)/1.4426950409-0.0;
+// }
+
+// inline __device__ float fast_softplus(float y){
+//     union{
+//         uint32_t i;
+//         float f;
+//     }v;
+//     v.i=((1<<23)*(1.4426950409*y+126.94201519f));
+//     return log2f(v.f+1);
+// }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<int BYTES> struct BytesToType {};

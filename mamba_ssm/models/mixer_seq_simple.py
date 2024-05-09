@@ -157,7 +157,9 @@ class MixerModel(nn.Module):
             )
         if not self.fused_add_norm:
             residual = (hidden_states + residual) if residual is not None else hidden_states
+            print("mixer residual: ", residual.shape)
             hidden_states = self.norm_f(residual.to(dtype=self.norm_f.weight.dtype))
+            print("mixer norm: ", hidden_states.shape)
         else:
             # Set prenorm=False here since we don't need the residual
             fused_add_norm_fn = rms_norm_fn if isinstance(self.norm_f, RMSNorm) else layer_norm_fn
