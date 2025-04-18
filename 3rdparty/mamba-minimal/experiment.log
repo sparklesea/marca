@@ -1,0 +1,6 @@
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 1
+| Tasks  |Version|Filter| Metric |Value |   |Stderr|
+|--------|-------|------|--------|-----:|---|-----:|
+|arc_easy|Yaml   |none  |acc     |0.5248|±  |0.0102|
+|        |       |none  |acc_norm|0.4878|±  |0.0103|
+

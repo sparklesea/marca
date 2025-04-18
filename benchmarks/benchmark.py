@@ -25,10 +25,12 @@ parser.add_argument("--topp", type=float, default=1.0)
 parser.add_argument("--minp", type=float, default=0.0)
 parser.add_argument("--repetition-penalty", type=float, default=1.0)
 parser.add_argument("--batch", type=int, default=1)
+parser.add_argument("--warmup", type=int, default=1)
+parser.add_argument("--repeat", type=int, default=1)
 args = parser.parse_args()
 
-warmup = 5
-repeats = 100
+warmup = args.warmup
+repeats = args.repeat
 device = "cuda"
 # device = "cpu"
 dtype = torch.float16
@@ -47,7 +49,8 @@ else:
 model.eval()
 print(f"Number of parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
-torch.random.manual_seed(114514)
+# torch.random.manual_seed(114514)
+torch.random.manual_seed(520)
 if args.prompt is None:
     input_ids = torch.randint(1, 50277, (args.batch, args.promptlen), dtype=torch.long, device="cuda")
     attn_mask = torch.ones_like(input_ids, dtype=torch.long, device="cuda")

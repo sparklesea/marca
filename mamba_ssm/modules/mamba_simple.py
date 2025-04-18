@@ -166,8 +166,8 @@ class Mamba(nn.Module):
                 # If we just take x[:, :, -self.d_conv :], it will error if seqlen < self.d_conv
                 # Instead F.pad will pad with zeros if seqlen < self.d_conv, and truncate otherwise.
                 conv_state.copy_(F.pad(x, (self.d_conv - x.shape[-1], 0)))  # Update state (B D W)
-            # if causal_conv1d_fn is None:
-            if causal_conv1d_fn is not None:
+            if causal_conv1d_fn is None:
+            # if causal_conv1d_fn is not None:
                 x = self.act(self.conv1d(x)[..., :seqlen])
             else:
                 assert self.activation in ["silu", "swish"]
@@ -186,6 +186,8 @@ class Mamba(nn.Module):
             dt = self.dt_proj.weight @ dt.t()
             dt = rearrange(dt, "d (b l) -> b d l", l=seqlen)
             B = rearrange(B, "(b l) dstate -> b dstate l", l=seqlen).contiguous()
+            # dtB (b d dstate l) * x (b d l)
+            # 
             C = rearrange(C, "(b l) dstate -> b dstate l", l=seqlen).contiguous()
             assert self.activation in ["silu", "swish"]
             y = selective_scan_fn(
@@ -206,6 +208,29 @@ class Mamba(nn.Module):
             y = rearrange(y, "b d l -> b l d")
             out = self.out_proj(y)
         return out
+    
+    def compute_proportion(self, input, low_condition, high_condition, mode='outside'):
+        # # 计算总元素数量
+        total_elements = input.numel()
+        if mode == 'outside':
+            # 条件1：小于0.001
+            condition1 = input < low_condition
+            count1 = torch.sum(condition1).item()
+            percentage1 = (count1 / total_elements) * 100
+
+            # 条件2：位于0.95到1之间（包括0.95但不包括1，即 [0.95, 1)）
+            condition2 = (input >= high_condition) & (input <= 1)
+            count2 = torch.sum(condition2).item()
+            percentage2 = (count2 / total_elements) * 100
+            with open(file=f'/root/huangshan/research/marca/exp/log/proportion_{low_condition}_{high_condition}.csv', mode='a') as f:
+                print(f"{self.layer_idx}, {percentage1:.2f}%, {percentage2:.2f}%", file=f)
+        elif mode == 'inside':
+            condition = (input >= low_condition) & (input <= high_condition)
+            count = torch.sum(condition).item()
+            percentage = (count / total_elements) * 100
+            with open(file=f'/root/huangshan/research/marca/exp/log/proportion_{low_condition}_{high_condition}.csv', mode='a') as f:
+                print(f"{self.layer_idx}, {percentage:.2f}%", file=f)
+
 
     def step(self, hidden_states, conv_state, ssm_state):
         dtype = hidden_states.dtype
@@ -241,16 +266,32 @@ class Mamba(nn.Module):
         # if selective_state_update is None:
         if selective_state_update is not None:
             # Discretize A and B
-            # import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt
             # plt.hist((dt + self.dt_proj.bias.to(dtype=dt.dtype)).flatten().cpu().numpy(), bins=100, density=True)
             # plt.savefig(f'/home/huangshan/huangshan/research/mamba/fig/sfp_input/{self.layer_idx}_sfp_input')
             # plt.close()
             dt = F.softplus(dt + self.dt_proj.bias.to(dtype=dt.dtype))
-            # plt.hist(torch.einsum("bd,dn->bdn", dt, A).flatten().cpu().numpy(), bins=100, density=True)
-            # plt.savefig(f'/home/huangshan/huangshan/research/mamba/fig/exp_input/{self.layer_idx}_exp_input')
+            dtA = torch.einsum("bd,dn->bdn", dt, A)
+
+            with open(file=f'/root/huangshan/research/marca/exp/log/dt_A.log', mode='a') as f:
+                print(f"max: {dtA.max()}, min: {dtA.min()}", file=f)
+
+            # plt.hist(dtA.flatten().cpu().numpy(), bins=100, density=True)
+            # plt.savefig(f'/root/huangshan/research/marca/exp/fig/exp_input/{self.layer_idx}_exp_input')
             # plt.close()
-            dA = torch.exp(torch.einsum("bd,dn->bdn", dt, A))
+            dA = torch.exp(dtA)
+
+            self.compute_proportion(dA, 0.01, 0.99, 'outside')
+ 
             dB = torch.einsum("bd,bn->bdn", dt, B)
+
+            self.compute_proportion(dB, -0.05, 0.05, 'inside')
+
+            # self.compute_proportion(x, -0.02, 0.02, 'inside')
+            # plt.hist(B.flatten().cpu().numpy(), bins=100, density=True)
+            # plt.savefig(f'/root/huangshan/research/marca/exp/fig/B/{self.layer_idx}_B')
+            # plt.close()
+
             ssm_state.copy_(ssm_state * dA + rearrange(x, "b d -> b d 1") * dB)
             y = torch.einsum("bdn,bn->bd", ssm_state.to(dtype), C)
             y = y + self.D.to(dtype) * x

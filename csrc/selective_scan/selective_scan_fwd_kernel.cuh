@@ -155,7 +155,13 @@ void selective_scan_fwd_kernel(SSMParamsBase params) {
                     delta_vals[r][i] = delta_vals[r][i] <= 20.f ? log1pf(expf(delta_vals[r][i])) : delta_vals[r][i];
                     // delta_vals[r][i] = delta_vals[r][i] <= 20.f ? fast_softplus(delta_vals[r][i]) : delta_vals[r][i];
                 }
-                delta_u_vals[r][i] = delta_vals[r][i] * u_val;
+                // if(abs(u_val) < 0.03){
+                //     u_val = 0;
+                // }
+                // delta_u_vals[r][i] = delta_vals[r][i] * u_val;
+
+                delta_u_vals[r][i] = delta_vals[r][i];
+
                 out_vals[r][i] = D_val[r] * u_val;
             }
         }
@@ -214,9 +220,24 @@ void selective_scan_fwd_kernel(SSMParamsBase params) {
                 #pragma unroll
                 for (int i = 0; i < kNItems; ++i) {
                     if constexpr (!kIsComplex) {
-                        thread_data[i] = make_float2(exp2f(delta_vals[r][i] * A_val[r]),
-                        // thread_data[i] = make_float2(fast_exp(delta_vals[r][i] * A_val[r]),
-                                                     !kIsVariableB ? delta_u_vals[r][i] : B_vals[i] * delta_u_vals[r][i]);
+                        float temp_dtA = exp2f(delta_vals[r][i] * A_val[r]);
+                        // float temp_dtA = fast_exp(delta_vals[r][i] * A_val[r]);
+                        // if (temp_dtA <= 0.01)
+                        // {
+                        //     temp_dtA = 0;
+                        // }
+                        // else if(temp_dtA>=0.95){
+                        //     temp_dtA = 1;
+                        // }
+                        float temp_dtB = B_vals[i] * float(u_vals[r][i]);
+                        // if(temp_dtB > -1 && temp_dtB < 1){
+                        //     temp_dtB = 0;
+                        // }
+
+                        thread_data[i] = make_float2(temp_dtA,
+                                                     // thread_data[i] = make_float2(fast_exp(delta_vals[r][i] * A_val[r])),
+                                                    //  !kIsVariableB ? delta_u_vals[r][i] : B_vals[i] * delta_u_vals[r][i]);
+                                                     !kIsVariableB ? delta_u_vals[r][i] : temp_dtB * delta_u_vals[r][i]);
                         if constexpr (!Ktraits::kIsEvenLen) {  // So that the last state is correct
                             if (threadIdx.x * kNItems + i >= params.seqlen - chunk * kChunkSize) {
                                 thread_data[i] = make_float2(1.f, 0.f);

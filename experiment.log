@@ -1,0 +1,65 @@
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter|    Metric     | Value |   |Stderr|
+|--------|-------|------|---------------|------:|---|------|
+|wikitext|Yaml   |none  |word_perplexity|11.7645|   |      |
+|        |       |none  |byte_perplexity| 1.5856|   |      |
+|        |       |none  |bits_per_byte  | 0.6651|   |      |
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter| Metric |Value |   |Stderr|
+|--------|-------|------|--------|-----:|---|-----:|
+|arc_easy|Yaml   |none  |acc     |0.6961|±  |0.0094|
+|        |       |none  |acc_norm|0.6427|±  |0.0098|
+
+bootstrapping for stddev: perplexity
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|  Metric  |Value |   |Stderr|
+|--------------|-------|------|----------|-----:|---|-----:|
+|lambada_openai|Yaml   |none  |perplexity|4.2312|±  |0.0950|
+|              |       |none  |acc       |0.6909|±  |0.0064|
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+|  Tasks   |Version|Filter|Metric|Value |   |Stderr|
+|----------|-------|------|------|-----:|---|-----:|
+|winogrande|Yaml   |none  |acc   |0.6306|±  |0.0136|
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+|  Tasks  |Version|Filter| Metric |Value |   |Stderr|
+|---------|-------|------|--------|-----:|---|-----:|
+|hellaswag|Yaml   |none  |acc     |0.4947|±  |0.0050|
+|         |       |none  |acc_norm|0.6614|±  |0.0047|
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+|Tasks|Version|Filter| Metric |Value |   |Stderr|
+|-----|-------|------|--------|-----:|---|-----:|
+|piqa |Yaml   |none  |acc     |0.7519|±  |0.0101|
+|     |       |none  |acc_norm|0.7584|±  |0.0100|
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter|    Metric     | Value |   |Stderr|
+|--------|-------|------|---------------|------:|---|------|
+|wikitext|Yaml   |none  |word_perplexity|11.9926|   |      |
+|        |       |none  |byte_perplexity| 1.5913|   |      |
+|        |       |none  |bits_per_byte  | 0.6702|   |      |
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter|    Metric     |  Value  |   |Stderr|
+|--------|-------|------|---------------|--------:|---|------|
+|wikitext|Yaml   |none  |word_perplexity|4080.9235|   |      |
+|        |       |none  |byte_perplexity|   4.7340|   |      |
+|        |       |none  |bits_per_byte  |   2.2431|   |      |
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter|    Metric     | Value |   |Stderr|
+|--------|-------|------|---------------|------:|---|------|
+|wikitext|Yaml   |none  |word_perplexity|11.7645|   |      |
+|        |       |none  |byte_perplexity| 1.5856|   |      |
+|        |       |none  |bits_per_byte  | 0.6651|   |      |
+
+mamba (pretrained=/share/public_models/mamba-2.8b), limit: None, num_fewshot: None, batch_size: 64
+| Tasks  |Version|Filter|    Metric     | Value |   |Stderr|
+|--------|-------|------|---------------|------:|---|------|
+|wikitext|Yaml   |none  |word_perplexity|11.7630|   |      |
+|        |       |none  |byte_perplexity| 1.5856|   |      |
+|        |       |none  |bits_per_byte  | 0.6650|   |      |
+

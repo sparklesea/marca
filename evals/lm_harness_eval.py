@@ -16,8 +16,7 @@ class MambaEvalWrapper(HFLM):
 
     AUTO_MODEL_CLASS = transformers.AutoModelForCausalLM
 
-    def __init__(self, pretrained="state-spaces/mamba-2.8b", max_length=2048, batch_size=None, device="cuda",
-                 dtype=torch.float16):
+    def __init__(self, pretrained="state-spaces/mamba-2.8b", max_length=2048, batch_size=None, device="cuda", dtype=torch.float16):
         LM.__init__(self)
         self._model = MambaLMHeadModel.from_pretrained(pretrained, device=device, dtype=dtype)
         self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
