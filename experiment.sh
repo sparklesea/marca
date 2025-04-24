@@ -5,3 +5,6 @@ CUDA_VISIBLE_DEVICES=5 python evals/lm_harness_eval.py --model mamba --model_arg
 CUDA_VISIBLE_DEVICES=5 python evals/lm_harness_eval.py --model mamba --model_args pretrained=/share/public_models/mamba-370m --tasks wikitext,lambada_openai,piqa,winogrande,arc_easy,hellaswag --device cuda --batch_size 64 >> experiment.log
 CUDA_VISIBLE_DEVICES=5 python evals/lm_harness_eval.py --model mamba --model_args pretrained=/share/public_models/mamba-130m --tasks wikitext,lambada_openai,piqa,winogrande,arc_easy,hellaswag --device cuda --batch_size 64 >> experiment.log
 
+HF_DATASETS_OFFLINE=1 python evals/lm_harness_eval.py --model mamba --model_args pretrained=../sii_lijinhao/models/mamba-2.8b/ --tasks winogrande --device cuda --batch_size 64
+
+HF_DATASETS_OFFLINE=1 python evals/lm_harness_eval.py --model mamba --model_args "pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=True" --tasks wikitext,lambada_openai,piqa,winogrande,arc_easy,hellaswag --device cuda --batch_size 64 >> experiment.log

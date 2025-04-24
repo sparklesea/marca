@@ -31,11 +31,12 @@ def create_block(
     layer_idx=None,
     device=None,
     dtype=None,
+    debug=False,
 ):
     if ssm_cfg is None:
         ssm_cfg = {}
     factory_kwargs = {"device": device, "dtype": dtype}
-    mixer_cls = partial(Mamba, layer_idx=layer_idx, **ssm_cfg, **factory_kwargs)
+    mixer_cls = partial(Mamba, layer_idx=layer_idx, debug=debug, **ssm_cfg, **factory_kwargs)
     norm_cls = partial(
         nn.LayerNorm if not rms_norm else RMSNorm, eps=norm_epsilon, **factory_kwargs
     )
@@ -97,6 +98,7 @@ class MixerModel(nn.Module):
         residual_in_fp32=False,
         device=None,
         dtype=None,
+        debug=False,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -124,6 +126,7 @@ class MixerModel(nn.Module):
                     residual_in_fp32=residual_in_fp32,
                     fused_add_norm=fused_add_norm,
                     layer_idx=i,
+                    debug=debug,
                     **factory_kwargs,
                 )
                 for i in range(n_layer)
@@ -181,6 +184,7 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
         self,
         config: MambaConfig,
         initializer_cfg=None,
+        debug = False,
         device=None,
         dtype=None,
     ) -> None:
@@ -194,6 +198,8 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
         fused_add_norm = config.fused_add_norm
         pad_vocab_size_multiple = config.pad_vocab_size_multiple
         factory_kwargs = {"device": device, "dtype": dtype}
+        
+        self.debug = debug
 
         super().__init__()
         if vocab_size % pad_vocab_size_multiple != 0:
@@ -207,6 +213,7 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
             initializer_cfg=initializer_cfg,
             fused_add_norm=fused_add_norm,
             residual_in_fp32=residual_in_fp32,
+            debug = debug,
             **factory_kwargs,
         )
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False, **factory_kwargs)
@@ -238,13 +245,27 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
             hidden_states = hidden_states[:, -num_last_tokens:]
         lm_logits = self.lm_head(hidden_states)
         CausalLMOutput = namedtuple("CausalLMOutput", ["logits"])
+        
+        if self.debug:
+            for layer_id in range(self.config.n_layer):
+                # torch.save(self.backbone.layers[layer_id].mixer.deltaB, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB/all_L/{layer_id}.pt')
+                
+                count = self.backbone.layers[layer_id].mixer.count
+                
+                # deltaB = self.backbone.layers[layer_id].mixer.deltaB
+                # deltaB = deltaB / torch.tensor(count, device=deltaB.device).view(1,-1,1) 
+                # torch.save(deltaB, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB/all_L/{layer_id}.pt')
+                
+                deltaA = self.backbone.layers[layer_id].mixer.deltaA
+                deltaA = deltaA / torch.tensor(count, device=deltaA.device).view(1,-1,1)
+                torch.save(deltaA, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaA/all_L/{layer_id}.pt')
         return CausalLMOutput(logits=lm_logits)
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, **kwargs):
+    def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, debug = False, **kwargs):
         config_data = load_config_hf(pretrained_model_name)
         config = MambaConfig(**config_data)
-        model = cls(config, device=device, dtype=dtype, **kwargs)
+        model = cls(config, device=device, dtype=dtype, debug = debug, **kwargs)
         model.load_state_dict(load_state_dict_hf(pretrained_model_name, device=device, dtype=dtype))
         return model
 

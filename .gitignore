@@ -4,3 +4,4 @@ build/
 **.so
 
 exp/
+profile_result/

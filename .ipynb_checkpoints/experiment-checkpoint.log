@@ -121,7 +121,7 @@ mamba (pretrained=../sii_lijinhao/models/mamba-2.8b,debug=False), limit: None, n
 |              |       |none  |bits_per_byte  | 0.7311|   |      |
 |winogrande    |Yaml   |none  |acc            | 0.5888|±  |0.0138|
 
-# on sii platform sparseB-10% (30% sparsity && 0.002 std)
+# on sii platform sparse-10% (30% sparsity && 0.002 std)
 =========================================================================
 bootstrapping for stddev: perplexity
 mamba (pretrained=../sii_lijinhao/models/mamba-2.8b,debug=False), limit: None, num_fewshot: None, batch_size: 64
@@ -140,8 +140,10 @@ mamba (pretrained=../sii_lijinhao/models/mamba-2.8b,debug=False), limit: None, n
 |              |       |none  |bits_per_byte  | 0.7021|   |      |
 |winogrande    |Yaml   |none  |acc            | 0.5864|±  |0.0138|
 
-# on sii platform sparseB-10% (0.002 std)
+# on sii platform sparse-10% (0.002 std)
 =========================================================================
+
+
 bootstrapping for stddev: perplexity
 mamba (pretrained=../sii_lijinhao/models/mamba-2.8b,debug=False), limit: None, num_fewshot: None, batch_size: 64
 |    Tasks     |Version|Filter|    Metric     |  Value  |   |Stderr|
@@ -158,42 +160,4 @@ mamba (pretrained=../sii_lijinhao/models/mamba-2.8b,debug=False), limit: None, n
 |              |       |none  |byte_perplexity|   4.6385|   |      |
 |              |       |none  |bits_per_byte  |   2.2137|   |      |
 |winogrande    |Yaml   |none  |acc            |   0.5872|±  |0.0138|
-
-# on sii platform sparseB-13.3% (0.002 std, chunk size 8)
-=========================================================================
-bootstrapping for stddev: perplexity
-mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False), limit: None, num_fewshot: None, batch_size: 64
-|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
-|--------------|-------|------|---------------|------:|---|-----:|
-|arc_easy      |Yaml   |none  |acc            | 0.6797|±  |0.0096|
-|              |       |none  |acc_norm       | 0.6098|±  |0.0100|
-|hellaswag     |Yaml   |none  |acc            | 0.4677|±  |0.0050|
-|              |       |none  |acc_norm       | 0.6276|±  |0.0048|
-|lambada_openai|Yaml   |none  |perplexity     | 4.6312|±  |0.1080|
-|              |       |none  |acc            | 0.6606|±  |0.0066|
-|piqa          |Yaml   |none  |acc            | 0.7405|±  |0.0102|
-|              |       |none  |acc_norm       | 0.7448|±  |0.0102|
-|wikitext      |Yaml   |none  |word_perplexity|13.7113|   |      |
-|              |       |none  |byte_perplexity| 1.6317|   |      |
-|              |       |none  |bits_per_byte  | 0.7064|   |      |
-|winogrande    |Yaml   |none  |acc            | 0.6125|±  |0.0137|
-
-# on sii platform sparseA-4.6% (0.02 std, chunk size 8)
-=========================================================================
-bootstrapping for stddev: perplexity
-mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False), limit: None, num_fewshot: None, batch_size: 64
-|    Tasks     |Version|Filter|    Metric     |    Value     |   | Stderr  |
-|--------------|-------|------|---------------|-------------:|---|--------:|
-|arc_easy      |Yaml   |none  |acc            |        0.6532|±  |   0.0098|
-|              |       |none  |acc_norm       |        0.6027|±  |   0.0100|
-|hellaswag     |Yaml   |none  |acc            |        0.3239|±  |   0.0047|
-|              |       |none  |acc_norm       |        0.3811|±  |   0.0048|
-|lambada_openai|Yaml   |none  |perplexity     |    16045.1942|±  |1160.2614|
-|              |       |none  |acc            |        0.0291|±  |   0.0023|
-|piqa          |Yaml   |none  |acc            |        0.7258|±  |   0.0104|
-|              |       |none  |acc_norm       |        0.7220|±  |   0.0105|
-|wikitext      |Yaml   |none  |word_perplexity|226531075.1616|   |         |
-|              |       |none  |byte_perplexity|       36.5133|   |         |
-|              |       |none  |bits_per_byte  |        5.1903|   |         |
-|winogrande    |Yaml   |none  |acc            |        0.6196|±  |   0.0136|
 

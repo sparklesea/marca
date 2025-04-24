@@ -33,7 +33,7 @@ from generation import GenerationMixin
 from collections import namedtuple
 
 import os
-ROOT_DIR = '/root/huangshan/research/marca/3rdparty/mamba-minimal/profile_result/'
+ROOT_DIR = '/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/3rdparty/mamba-minimal/profile_result/'
 
 @dataclass
 class ModelArgs:
@@ -61,7 +61,6 @@ class ModelArgs:
             self.vocab_size += (self.pad_vocab_size_multiple
                                 - self.vocab_size % self.pad_vocab_size_multiple)
 
-
 class Mamba(nn.Module, GenerationMixin):
     def __init__(self, args: ModelArgs):
         """Full Mamba model."""
@@ -69,6 +68,7 @@ class Mamba(nn.Module, GenerationMixin):
         self.args = args
         factory_kwargs = {"device": args.device, "dtype": args.dtype}
         super().__init__()
+        
         self.embedding = nn.Embedding(args.vocab_size, args.d_model, **factory_kwargs)
         self.layers = nn.ModuleList([ResidualBlock(args, layer_id) for layer_id in range(args.n_layer)])
         self.norm_f = RMSNorm(args.d_model, **factory_kwargs)
@@ -95,7 +95,7 @@ class Mamba(nn.Module, GenerationMixin):
         for layer in self.layers:
             x = layer(x)
             
-        x = self.norm_f(x)
+        x = self.norm_f(x).to(self.norm_f.weight.dtype)
         logits = self.lm_head(x)
 
         CausalLMOutput = namedtuple('CausalLMOutput', ['logits'])
@@ -182,7 +182,7 @@ class ResidualBlock(nn.Module):
                 [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> ....
             
         """
-        output = self.mixer(self.norm(x)) + x
+        output = self.mixer(self.norm(x.to(self.norm.weight.dtype))) + x.to(torch.float32)
 
         return output
             
@@ -211,6 +211,19 @@ class MambaBlock(nn.Module):
         # dt_proj projects Δ from dt_rank to d_in
         self.dt_proj = nn.Linear(args.dt_rank, args.d_inner, bias=True, **factory_kwargs)
 
+        # dt_max, dt_min, dt_init_floor = 0.1, 0.001, 1e-4
+        # # Initialize dt bias so that F.softplus(dt_bias) is between dt_min and dt_max
+        # dt = torch.exp(
+        #     torch.rand(args.d_inner, **factory_kwargs) * (math.log(dt_max) - math.log(dt_min))
+        #     + math.log(dt_min)
+        # ).clamp(min=dt_init_floor)
+        # # Inverse of softplus: https://github.com/pytorch/pytorch/issues/72759
+        # inv_dt = dt + torch.log(-torch.expm1(-dt))
+        # with torch.no_grad():
+        #     self.dt_proj.bias.copy_(inv_dt)
+        # # Our initialization would set all Linear.bias to zero, need to mark this one as _no_reinit
+        # self.dt_proj.bias._no_reinit = True
+
         A = repeat(torch.arange(1, args.d_state + 1, dtype=torch.float32, device=args.device), 'n -> d n', d=args.d_inner)
         self.A_log = nn.Parameter(torch.log(A))
         self.D = nn.Parameter(torch.ones(args.d_inner, dtype=torch.float32, device=args.device))
@@ -220,6 +233,7 @@ class MambaBlock(nn.Module):
 
         self.deltaA = 0
         self.deltaB = 0
+        self.mask = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/3rdparty/mamba-minimal/profile_result/pt/deltaB_mask/mask.pt', map_location=args.device)
 
     def forward(self, x):
         """Mamba block forward. This looks the same as Figure 3 in Section 3.4 in the Mamba paper [1].
@@ -250,7 +264,7 @@ class MambaBlock(nn.Module):
         
         y = y * F.silu(res)
 
-        y = y.to(dtype=self.args.dtype)
+        y = y.to(self.args.dtype)
         
         output = self.out_proj(y)
 
@@ -332,7 +346,13 @@ class MambaBlock(nn.Module):
         u = u.float()
 
         deltaA = torch.exp(einsum(delta, A, 'b l d_in, d_in n -> b l d_in n'))
-        deltaB_u = einsum(delta, B, u, 'b l d_in, b l n, b l d_in -> b l d_in n')
+        # deltaB_u = einsum(delta, B, u, 'b l d_in, b l n, b l d_in -> b l d_in n')
+        
+        deltaB = einsum(delta, B, 'b l d_in, b l n -> b l d_in n')
+        mask = self.mask[self.layer_id].reshape(1, 1, 1, -1).float()
+        deltaB_mask = deltaB * mask
+        
+        deltaB_u = einsum(deltaB_mask, u, 'b l d_in n, b l d_in -> b l d_in n')
 
         # if self.args.debug:
         #     with torch.no_grad():

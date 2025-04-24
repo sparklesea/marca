@@ -10,7 +10,7 @@ import os
 import json
 from tqdm import tqdm
 
-ROOT_DIR = "/root/huangshan/research/marca/3rdparty/mamba-minimal"
+ROOT_DIR = "/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/3rdparty/mamba-minimal"
 
 def generate(model,
              tokenizer,
@@ -50,7 +50,7 @@ def prefill(model, input_ids, task):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model_name", type=str, default='/share/public_models/mamba-2.8b')
+parser.add_argument("--model_name", type=str, default='/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/sii_lijinhao/models/mamba-2.8b')
 parser.add_argument("--promptlen", type=int, default=0)
 parser.add_argument("--genlen", type=int, default=100)
 parser.add_argument("--batch", type=int, default=1)

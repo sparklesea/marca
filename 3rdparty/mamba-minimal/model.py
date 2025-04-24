@@ -29,8 +29,11 @@ import torch.nn.functional as F
 from dataclasses import dataclass
 from einops import rearrange, repeat, einsum
 
+from generation import GenerationMixin
+from collections import namedtuple
+
 import os
-ROOT_DIR = '/root/huangshan/research/marca/3rdparty/mamba-minimal/profile_result/'
+ROOT_DIR = '/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/3rdparty/mamba-minimal/profile_result/'
 
 @dataclass
 class ModelArgs:
@@ -58,8 +61,7 @@ class ModelArgs:
             self.vocab_size += (self.pad_vocab_size_multiple
                                 - self.vocab_size % self.pad_vocab_size_multiple)
 
-
-class Mamba(nn.Module):
+class Mamba(nn.Module, GenerationMixin):
     def __init__(self, args: ModelArgs):
         """Full Mamba model."""
         
@@ -92,7 +94,7 @@ class Mamba(nn.Module):
         for layer in self.layers:
             x = layer(x, task)
             
-        x = self.norm_f(x)
+        x = self.norm_f(x).to(self.norm_f.weight.dtype)
         logits = self.lm_head(x)
 
         return logits
@@ -178,7 +180,7 @@ class ResidualBlock(nn.Module):
                 [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> [Norm -> Mamba -> Add] -> ....
             
         """
-        output = self.mixer(self.norm(x), task) + x
+        output = self.mixer(self.norm(x.to(self.norm.weight.dtype))) + x.to(torch.float32)
 
         return output
             
@@ -390,7 +392,7 @@ class MambaBlock(nn.Module):
             y = einsum(x, C[:, i, :], 'b d_in n, b n -> b d_in')
             ys.append(y)
         y = torch.stack(ys, dim=1)  # shape (b, l, d_in)
-        
+
         y = y + u * D
 
         del deltaA, deltaB_u

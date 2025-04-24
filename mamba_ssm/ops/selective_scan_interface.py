@@ -126,6 +126,12 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
     deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
     if not is_variable_B:
         deltaB_u = torch.einsum('bdl,dn,bdl->bdln', delta, B, u)
+        
+        if self.args.debug:
+            with torch.no_grad():
+                self.deltaB = self.deltaB + einsum(delta.mean(dim=1).squeeze(1), B.mean(dim=1).squeeze(1), 'b d_in, b n -> b d_in n').squeeze(0)
+                self.deltaA = self.deltaA + deltaA.mean(dim=1).squeeze(0) # (d_in n)
+        
     else:
         if B.dim() == 3:
             deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)

@@ -47,6 +47,7 @@ class Mamba(nn.Module):
         layer_idx=None,
         device=None,
         dtype=None,
+        debug=False
     ):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -115,6 +116,227 @@ class Mamba(nn.Module):
         self.D._no_weight_decay = True
 
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)
+        
+        self.debug = debug
+        self.sparseB = False
+        self.sparseA = True
+        self.constant = False
+        self.deltaB = 0.0
+        self.deltaA = 0.0
+        self.count = []
+        self.chunk_size = 8
+        if self.sparseB:
+            # self.mask = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/all.pt', map_location=device)
+            self.mask: Tensor = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/all_L.pt', map_location=device)
+        if self.sparseA:    
+            self.maskA: Tensor = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaA_mask/all_L.pt', map_location=device)
+        elif self.constant:
+            self.constant_dB = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/constant.pt', map_location=device)
+    
+    @staticmethod
+    def average_seqlen_chunk(input, chunk_size=256):
+        (d, seq_len, n) = input.shape
+        # 计算完整的 256 块数和剩余的元素数
+        full_blocks = seq_len // chunk_size
+        remainder = seq_len % chunk_size
+        
+        # 初始化结果张量
+        result_list = []
+        
+        # 对完整的 256 块进行平均
+        if full_blocks > 0:
+            full_blocks_tensor = input[:, :full_blocks * chunk_size, :]
+            reshaped_full_blocks = full_blocks_tensor.view(d, full_blocks, chunk_size, n)
+            averaged_full_blocks = reshaped_full_blocks.mean(dim=2)  # 在 256 维度上平均
+            result_list.append(averaged_full_blocks)
+        
+        # 对剩余的部分进行平均（如果有）
+        if remainder > 0:
+            remainder_tensor = input[:, full_blocks * chunk_size:, :]
+            averaged_remainder = remainder_tensor.mean(dim=1, keepdim=True)  # 在 l 维度上平均，保持维度
+            # 调整形状以匹配 (d, 1, n) 以便后续拼接
+            result_list.append(averaged_remainder)
+        
+        # 拼接结果
+        if len(result_list) > 1:
+            # 如果既有完整块又有剩余部分，拼接它们
+            result_tensor = torch.cat(result_list, dim=1)
+        else:
+            # 如果只有完整块或只有剩余部分，直接使用该结果
+            result_tensor = result_list[0]
+        
+        return result_tensor, full_blocks + (1 if remainder > 0 else 0)
+    
+    @staticmethod
+    def pad_and_add(tensor1: Tensor, tensor2: Tensor):
+        # 获取两个 tensor 的维度
+        d1, l1, n1 = tensor1.shape
+        d2, l2, n2 = tensor2.shape
+
+        # 确保其他维度相同
+        assert d1 == d2 and n1 == n2, "其他维度必须相同"
+
+        # 确定最大的 l 维度
+        max_l = max(l1, l2)
+        # 补齐 tensor1 的 l 维度（如果需要）
+        if l1 < max_l:
+            # 在 l 维度上补齐 (左边补 0，右边补 max_l - l1)
+            tensor1 = F.pad(tensor1, (0, 0, 0, max_l - l1))
+        # 补齐 tensor2 的 l 维度（如果需要）
+        if l2 < max_l:
+            # 在 l 维度上补齐 (左边补 0，右边补 max_l - l2)
+            tensor2 = F.pad(tensor2, (0, 0, 0, max_l - l2))
+        # 相加
+        result = tensor1 + tensor2
+        return result
+    
+    def process_profile_data(self, deltaA: Tensor, deltaB: Tensor):
+        batch = deltaA.shape[0]
+        deltaA = deltaA.sum(dim=0) # (d, l, n)
+        
+        deltaA, covered_nums = self.average_seqlen_chunk(deltaA, chunk_size=self.chunk_size)
+        
+        if covered_nums > len(self.count):
+            self.count.extend([0] * (covered_nums - len(self.count)))
+        self.count[:covered_nums] = [x + batch for x in self.count[:covered_nums]]
+        
+        if isinstance(self.deltaA, float) and self.deltaA == 0:
+            self.deltaA = deltaA
+        elif isinstance(self.deltaA, torch.Tensor):
+            self.deltaA = self.pad_and_add(self.deltaA, deltaA)
+        else:
+            raise NotImplementedError("self.deltaA is not float or torch.Tensor")
+        
+        deltaB = deltaB.sum(dim=0)
+        deltaB, covered_nums = self.average_seqlen_chunk(deltaB, chunk_size=self.chunk_size)
+        if isinstance(self.deltaB, float) and self.deltaB == 0:
+            self.deltaB = deltaB
+        elif isinstance(self.deltaB, torch.Tensor):
+            self.deltaB = self.pad_and_add(self.deltaB, deltaB)
+        else:
+            raise NotImplementedError("self.deltaB is not float or torch.Tensor")
+
+    
+    def selective_scan_ref(self, u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,
+                        return_last_state=False):
+        """
+        u: r(B D L)
+        delta: r(B D L)
+        A: c(D N) or r(D N)
+        B: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)
+        C: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)
+        D: r(D)
+        z: r(B D L)
+        delta_bias: r(D), fp32
+
+        out: r(B D L)
+        last_state (optional): r(B D dstate) or c(B D dstate)
+        """
+        dtype_in = u.dtype
+        u = u.float()
+        delta = delta.float()
+        if delta_bias is not None:
+            delta = delta + delta_bias[..., None].float()
+        if delta_softplus:
+            delta = F.softplus(delta)
+        batch, dim, dstate = u.shape[0], A.shape[0], A.shape[1]
+        is_variable_B = B.dim() >= 3
+        is_variable_C = C.dim() >= 3
+        if A.is_complex():
+            if is_variable_B:
+                B = torch.view_as_complex(rearrange(B.float(), "... (L two) -> ... L two", two=2))
+            if is_variable_C:
+                C = torch.view_as_complex(rearrange(C.float(), "... (L two) -> ... L two", two=2))
+        else:
+            B = B.float()
+            C = C.float()
+        x = A.new_zeros((batch, dim, dstate))
+        ys = []
+        deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
+        if not is_variable_B:
+            deltaB_u = torch.einsum('bdl,dn,bdl->bdln', delta, B, u)
+            
+        else:
+            if B.dim() == 3:
+                if not self.sparseA and not self.sparseB and not self.constant:
+                    deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
+                
+                if self.debug:
+                    deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
+                    self.process_profile_data(deltaA, deltaB)
+                    
+                    deltaB = torch.einsum('bdl,bnl->bdln', delta, B).sum(dim=0) / 61197
+                    self.deltaB = self.deltaB + torch.einsum('bdl,bnl->bdln', delta, B).mean(dim=2).sum(dim=0) / 61197
+                    self.deltaA = self.deltaA + deltaA.mean(dim=2).sum(dim=0) / 61197 # (d_in n) 
+                
+                if self.sparseB:
+                    deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
+                    mask = self.mask[self.layer_idx]
+                    
+                    # maskB with chunks of seq length
+                    if mask.dim() == 2: # (l/chunk_size, n)
+                        mask = mask.repeat_interleave(repeats=self.chunk_size, dim=0)[:delta.shape[-1], :] #(l, n)
+                        if mask.dtype == torch.bool: # bool mask
+                            deltaB_mask = deltaB * (mask == False)
+                        else: # constant mask without dim
+                            condition = (mask != torch.inf)
+                            deltaB_mask = torch.where(condition, mask, deltaB)
+                    elif mask.dim() == 3: # constant mask with dim
+                        mask = mask.unsqueeze(0) #(b,d,l/chunk_size,n)
+                        condition = (mask != 0)
+                        deltaB_mask = torch.where(condition, mask, deltaB)
+                    else:
+                        raise ValueError("mask dim must be 2 or 3!")
+                    
+                    deltaB_u = torch.einsum('bdln,bdl->bdln', deltaB_mask, u)
+                
+                if self.sparseA:
+                    mask = self.maskA[self.layer_idx]
+                    if mask.dim() == 2:
+                        mask = mask.repeat_interleave(repeats=self.chunk_size, dim=0)[:delta.shape[-1], :]
+                        if mask.dtype == torch.bool:
+                            deltaA = torch.where(mask, 0.98, deltaA)
+                        else:
+                            condition = (mask != torch.inf)
+                            deltaA = torch.where(condition, mask, deltaA)
+                    # still need to compute deltaB_u
+                    deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
+                elif self.constant:
+                    deltaB_constant = self.constant_dB[self.layer_idx].unsqueeze(0).unsqueeze(2).repeat(delta.shape[0], 1, delta.shape[-1], 1)
+                    
+                    # deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
+                    # constant_dB = self.constant_dB[self.layer_idx].unsqueeze(0).unsqueeze(2)
+                    # constant_dB_dropout = nn.functional.dropout(constant_dB, p = 0.9999999)
+                    # condition = constant_dB_dropout != 0
+                    # deltaB_constant = torch.where(condition, constant_dB_dropout, deltaB)
+                    deltaB_u = torch.einsum('bdln,bdl->bdln', deltaB_constant, u)
+            else:
+                B = repeat(B, "B G N L -> B (G H) N L", H=dim // B.shape[1])
+                deltaB_u = torch.einsum('bdl,bdnl,bdl->bdln', delta, B, u)
+        if is_variable_C and C.dim() == 4:
+            C = repeat(C, "B G N L -> B (G H) N L", H=dim // C.shape[1])
+        last_state = None
+        for i in range(u.shape[2]):
+            x = deltaA[:, :, i] * x + deltaB_u[:, :, i]
+            
+            if not is_variable_C:
+                y = torch.einsum('bdn,dn->bd', x, C)
+            else:
+                if C.dim() == 3:
+                    y = torch.einsum('bdn,bn->bd', x, C[:, :, i])
+                else:
+                    y = torch.einsum('bdn,bdn->bd', x, C[:, :, :, i])
+            if i == u.shape[2] - 1:
+                last_state = x
+            if y.is_complex():
+                y = y.real * 2
+            ys.append(y)
+        y = torch.stack(ys, dim=2) # (batch dim L)
+        out = y if D is None else y + u * rearrange(D, "d -> d 1")
+        if z is not None:
+            out = out * F.silu(z)
+        out = out.to(dtype=dtype_in)
+        return out if not return_last_state else (out, last_state)
 
     def forward(self, hidden_states, inference_params=None):
         """
@@ -190,7 +412,19 @@ class Mamba(nn.Module):
             # 
             C = rearrange(C, "(b l) dstate -> b dstate l", l=seqlen).contiguous()
             assert self.activation in ["silu", "swish"]
-            y = selective_scan_fn(
+            # y = selective_scan_fn(
+            #     x,
+            #     dt,
+            #     A,
+            #     B,
+            #     C,
+            #     self.D.float(),
+            #     z=z,
+            #     delta_bias=self.dt_proj.bias.float(),
+            #     delta_softplus=True,
+            #     return_last_state=ssm_state is not None,
+            # )
+            y = self.selective_scan_ref(
                 x,
                 dt,
                 A,
