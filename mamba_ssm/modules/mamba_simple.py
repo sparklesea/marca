@@ -47,7 +47,10 @@ class Mamba(nn.Module):
         layer_idx=None,
         device=None,
         dtype=None,
-        debug=False
+        marca_args=None,
+        # debug=False,
+        # sparsedB=False,
+        # sparsehs=False,
     ):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -117,14 +120,36 @@ class Mamba(nn.Module):
 
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)
         
-        self.debug = debug
-        self.sparseB = False
-        self.sparseA = True
+        self.debug = marca_args.debug
+        
+        # sparse
+        self.sparseB = marca_args.sparsedB
+        self.sparseA = False
+        self.sparse_hs = marca_args.sparsehs
         self.constant = False
-        self.deltaB = 0.0
-        self.deltaA = 0.0
+        
+        #approx
+        self.fastexp = marca_args.fastexp
+        self.silu = marca_args.silu
+        
+        if self.debug:
+            self.sparseB, self.sparseA, self.sparse_hs, self.constant = False, False, False, False
+        self.deltaB = None
+        self.deltaA = None
+        self.hidden_states = None
         self.count = []
         self.chunk_size = 8
+        
+        # self.profile_layers = [0, 4, 16, 64, 256, 1024]
+        # self.num_profile_layers = len(self.profile_layers)
+        # self.count_hidden_states = [0] * self.num_profile_layers
+        # if self.debug:
+        #     self.hidden_states = torch.zeros(self.d_inner, self.d_state, self.num_profile_layers, device=device) #(d_inner, d_state)
+        
+        self.count_hs = []
+        
+        if self.sparse_hs:
+            self.mask_hs = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/hidden_states_mask/all_L.pt', map_location=device) 
         if self.sparseB:
             # self.mask = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/all.pt', map_location=device)
             self.mask: Tensor = torch.load('/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/all_L.pt', map_location=device)
@@ -200,7 +225,7 @@ class Mamba(nn.Module):
             self.count.extend([0] * (covered_nums - len(self.count)))
         self.count[:covered_nums] = [x + batch for x in self.count[:covered_nums]]
         
-        if isinstance(self.deltaA, float) and self.deltaA == 0:
+        if self.deltaA is None:
             self.deltaA = deltaA
         elif isinstance(self.deltaA, torch.Tensor):
             self.deltaA = self.pad_and_add(self.deltaA, deltaA)
@@ -209,7 +234,7 @@ class Mamba(nn.Module):
         
         deltaB = deltaB.sum(dim=0)
         deltaB, covered_nums = self.average_seqlen_chunk(deltaB, chunk_size=self.chunk_size)
-        if isinstance(self.deltaB, float) and self.deltaB == 0:
+        if self.deltaB is None:
             self.deltaB = deltaB
         elif isinstance(self.deltaB, torch.Tensor):
             self.deltaB = self.pad_and_add(self.deltaB, deltaB)
@@ -252,7 +277,30 @@ class Mamba(nn.Module):
             C = C.float()
         x = A.new_zeros((batch, dim, dstate))
         ys = []
-        deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
+        
+        if self.fastexp:
+            import ctypes
+            import numpy as np
+            import struct
+            from fast_exp_cuda import fast_exp
+
+            # def fast_exp_np(y: np.ndarray) -> np.ndarray:
+            #     # 确保输入为 float32 类型
+            #     y = y.astype(np.float32, copy=False)
+            #     # 计算缩放系数（向量化）
+            #     scale = y * 1.4426950409 + 126.94201519
+            #     # 通过视图转换直接操作二进制位（无需逐元素循环）
+            #     scale_uint32 = scale.view(np.uint32)
+            #     # 左移 23 位并保留 32 位范围（等价于原 CUDA 的位操作）
+            #     shifted_uint32 = (scale_uint32 << 23) & 0xFFFFFFFF
+            #     # 转换回 float32 并添加修正项
+            #     result = shifted_uint32.view(np.float32) + 0.0285784
+            #     return result.astype(y.dtype, copy=False)  # 保持原始数据类型
+            # deltaA = torch.from_numpy(fast_exp_np(torch.einsum('bdl,dn->bdln', delta, A).cpu().numpy())).to(u.device)
+            
+            deltaA = fast_exp(torch.einsum('bdl,dn->bdln', delta, A / torch.log(torch.tensor(2.0, device=A.device))).contiguous().view(-1)).reshape(batch, dim, u.shape[-1], dstate)
+        else:
+            deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
         if not is_variable_B:
             deltaB_u = torch.einsum('bdl,dn,bdl->bdln', delta, B, u)
             
@@ -265,9 +313,9 @@ class Mamba(nn.Module):
                     deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
                     self.process_profile_data(deltaA, deltaB)
                     
-                    deltaB = torch.einsum('bdl,bnl->bdln', delta, B).sum(dim=0) / 61197
-                    self.deltaB = self.deltaB + torch.einsum('bdl,bnl->bdln', delta, B).mean(dim=2).sum(dim=0) / 61197
-                    self.deltaA = self.deltaA + deltaA.mean(dim=2).sum(dim=0) / 61197 # (d_in n) 
+                    # deltaB = torch.einsum('bdl,bnl->bdln', delta, B).sum(dim=0) / 61197
+                    # self.deltaB = self.deltaB + torch.einsum('bdl,bnl->bdln', delta, B).mean(dim=2).sum(dim=0) / 61197
+                    # self.deltaA = self.deltaA + deltaA.mean(dim=2).sum(dim=0) / 61197 # (d_in n) 
                 
                 if self.sparseB:
                     deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
@@ -316,8 +364,28 @@ class Mamba(nn.Module):
         if is_variable_C and C.dim() == 4:
             C = repeat(C, "B G N L -> B (G H) N L", H=dim // C.shape[1])
         last_state = None
-        for i in range(u.shape[2]):
-            x = deltaA[:, :, i] * x + deltaB_u[:, :, i]
+        
+        temp_hidden_states = None
+        for i in range(u.shape[2]): # for each L
+            if self.sparse_hs:
+                temp_hs_mask = self.mask_hs[self.layer_idx, i // self.chunk_size]
+                x = torch.where(temp_hs_mask, 0, x)
+            x = deltaA[:, :, i] * x + deltaB_u[:, :, i] #(b, d, n)
+            
+            # if self.sparse_hiddens_state:
+                ## dynamic sparse
+                # x_mean = x.mean(0).mean(0)
+                # x_std = x.mean(0).std(dim=0)
+                # mask = (x_mean.abs() < 0.001) & (x_std < 0.001)
+                # print(f"layer: {self.layer_idx}, sparsity: {mask.sum() / mask.numel()}")
+                # x = torch.where(mask, 0, x)
+            
+            # for hidden states profile
+            if self.debug:
+                if temp_hidden_states is None:
+                    temp_hidden_states = x.sum(0).unsqueeze(1)
+                else:
+                    temp_hidden_states = torch.cat([temp_hidden_states, x.sum(0).unsqueeze(1)], dim=1) #(d, l, n)
             
             if not is_variable_C:
                 y = torch.einsum('bdn,dn->bd', x, C)
@@ -331,10 +399,43 @@ class Mamba(nn.Module):
             if y.is_complex():
                 y = y.real * 2
             ys.append(y)
+
+        if self.debug:
+            temp_hidden_states, chunk_num = self.average_seqlen_chunk(temp_hidden_states, chunk_size=self.chunk_size)
+            
+            if chunk_num > len(self.count_hs):
+                self.count_hs.extend([0] * (chunk_num - len(self.count_hs)))
+            self.count_hs[:chunk_num] = [num + batch for num in self.count_hs[:chunk_num]]
+            
+            if self.hidden_states is None:
+                self.hidden_states = temp_hidden_states
+            elif isinstance(self.hidden_states, torch.Tensor):
+                self.hidden_states = self.pad_and_add(self.hidden_states, temp_hidden_states)
+            else:
+                raise NotImplementedError("self.hidden_states is torch.Tensor")
+        
         y = torch.stack(ys, dim=2) # (batch dim L)
         out = y if D is None else y + u * rearrange(D, "d -> d 1")
         if z is not None:
-            out = out * F.silu(z)
+            if self.silu:
+                def fast_silu(tensor):
+                    result = torch.empty_like(tensor,device=tensor.device)
+                    # x < -5
+                    mask1 = tensor < -5
+                    result[mask1] = -0.0135
+                    # -5 <= x < -1.5
+                    mask2 = (tensor >= -5) & (tensor < -1.5)
+                    result[mask2] = -0.06244 * tensor[mask2] - 0.3457
+                    # -1.5 <= x <= 0.75
+                    mask3 = (tensor >= -1.5) & (tensor <= 0.75)
+                    result[mask3] = 0.232 * (tensor[mask3] + 1.181) ** 2 - 0.275
+                    # x > 0.75
+                    mask4 = tensor > 0.75
+                    result[mask4] = 1.05 * tensor[mask4] - 0.2781
+                    return result
+                out = out * fast_silu(z)
+            else:
+                out = out * F.silu(z)
         out = out.to(dtype=dtype_in)
         return out if not return_last_state else (out, last_state)
 

@@ -197,3 +197,58 @@ mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False), limit: None, 
 |              |       |none  |bits_per_byte  |        5.1903|   |         |
 |winogrande    |Yaml   |none  |acc            |        0.6196|±  |   0.0136|
 
+# on sii platform sparseH-21.7% (0.02 mean, 0.0015 std, chunk size 8)
+=========================================================================
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.6751|±  |0.0096|
+|              |       |none  |acc_norm       | 0.6157|±  |0.0100|
+|hellaswag     |Yaml   |none  |acc            | 0.4778|±  |0.0050|
+|              |       |none  |acc_norm       | 0.6470|±  |0.0048|
+|lambada_openai|Yaml   |none  |perplexity     | 5.2141|±  |0.1211|
+|              |       |none  |acc            | 0.6429|±  |0.0067|
+|piqa          |Yaml   |none  |acc            | 0.7481|±  |0.0101|
+|              |       |none  |acc_norm       | 0.7519|±  |0.0101|
+|wikitext      |Yaml   |none  |word_perplexity|12.4672|   |      |
+|              |       |none  |byte_perplexity| 1.6029|   |      |
+|              |       |none  |bits_per_byte  | 0.6807|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.6212|±  |0.0136|
+
+# on sii platform sparseH-21.7% (0.02 mean, 0.0015 std, chunk size 8) sparseB-13.3% (0.002 std, chunk size 8)
+=========================================================================
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.6658|±  |0.0097|
+|              |       |none  |acc_norm       | 0.5993|±  |0.0101|
+|hellaswag     |Yaml   |none  |acc            | 0.4554|±  |0.0050|
+|              |       |none  |acc_norm       | 0.6194|±  |0.0048|
+|lambada_openai|Yaml   |none  |perplexity     | 5.5174|±  |0.1334|
+|              |       |none  |acc            | 0.6204|±  |0.0068|
+|piqa          |Yaml   |none  |acc            | 0.7372|±  |0.0103|
+|              |       |none  |acc_norm       | 0.7345|±  |0.0103|
+|wikitext      |Yaml   |none  |word_perplexity|14.6482|   |      |
+|              |       |none  |byte_perplexity| 1.6520|   |      |
+|              |       |none  |bits_per_byte  | 0.7242|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.6085|±  |0.0137|
+
+all: both + sparsedB + sparsehs\n
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-2.8b/,debug=False,sparsedB=True,sparsehs=True,fastexp=True,silu=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.6633|±  |0.0097|
+|              |       |none  |acc_norm       | 0.5850|±  |0.0101|
+|hellaswag     |Yaml   |none  |acc            | 0.4516|±  |0.0050|
+|              |       |none  |acc_norm       | 0.6134|±  |0.0049|
+|lambada_openai|Yaml   |none  |perplexity     | 6.1375|±  |0.1486|
+|              |       |none  |acc            | 0.5964|±  |0.0068|
+|piqa          |Yaml   |none  |acc            | 0.7394|±  |0.0102|
+|              |       |none  |acc_norm       | 0.7394|±  |0.0102|
+|wikitext      |Yaml   |none  |word_perplexity|15.8423|   |      |
+|              |       |none  |byte_perplexity| 1.6764|   |      |
+|              |       |none  |bits_per_byte  | 0.7453|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5888|±  |0.0138|

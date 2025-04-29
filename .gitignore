@@ -5,3 +5,5 @@ build/
 
 exp/
 profile_result/
+dist
+*.egg-info

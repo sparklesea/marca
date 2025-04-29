@@ -1,0 +1,109 @@
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5358|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4747|±  |0.0102|
+|hellaswag     |Yaml   |none  |acc            | 0.3579|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4457|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     | 9.2219|±  |0.2585|
+|              |       |none  |acc            | 0.5304|±  |0.0070|
+|piqa          |Yaml   |none  |acc            | 0.6877|±  |0.0108|
+|              |       |none  |acc_norm       | 0.6888|±  |0.0108|
+|wikitext      |Yaml   |none  |word_perplexity|20.4645|   |      |
+|              |       |none  |byte_perplexity| 1.7586|   |      |
+|              |       |none  |bits_per_byte  | 0.8144|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5462|±  |0.0140|
+
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5505|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4819|±  |0.0103|
+|hellaswag     |Yaml   |none  |acc            | 0.3718|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4647|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     | 8.1369|±  |0.2232|
+|              |       |none  |acc            | 0.5562|±  |0.0069|
+|piqa          |Yaml   |none  |acc            | 0.6937|±  |0.0108|
+|              |       |none  |acc_norm       | 0.6817|±  |0.0109|
+|wikitext      |Yaml   |none  |word_perplexity|18.2489|   |      |
+|              |       |none  |byte_perplexity| 1.7213|   |      |
+|              |       |none  |bits_per_byte  | 0.7835|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5541|±  |0.0140|
+
+sparsity: 0.1358184814453125
+Saved final mask tensor of shape torch.Size([48, 256, 16]) to /inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB_mask/all_L.pt
+sparsity: 0.0862833708524704
+Saved final mask tensor of shape torch.Size([48, 256, 16]) to /inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/hidden_states_mask/all_L.pt
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=False), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5400|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4806|±  |0.0103|
+|hellaswag     |Yaml   |none  |acc            | 0.3623|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4439|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     |10.0074|±  |0.2851|
+|              |       |none  |acc            | 0.5148|±  |0.0070|
+|piqa          |Yaml   |none  |acc            | 0.6850|±  |0.0108|
+|              |       |none  |acc_norm       | 0.6736|±  |0.0109|
+|wikitext      |Yaml   |none  |word_perplexity|20.7373|   |      |
+|              |       |none  |byte_perplexity| 1.7629|   |      |
+|              |       |none  |bits_per_byte  | 0.8180|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5430|±  |0.0140|
+
+\n + =*20 + sparsedB + =*20
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=False,sparsedB=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5358|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4747|±  |0.0102|
+|hellaswag     |Yaml   |none  |acc            | 0.3579|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4457|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     | 9.2219|±  |0.2585|
+|              |       |none  |acc            | 0.5304|±  |0.0070|
+|piqa          |Yaml   |none  |acc            | 0.6877|±  |0.0108|
+|              |       |none  |acc_norm       | 0.6888|±  |0.0108|
+|wikitext      |Yaml   |none  |word_perplexity|20.4645|   |      |
+|              |       |none  |byte_perplexity| 1.7586|   |      |
+|              |       |none  |bits_per_byte  | 0.8144|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5462|±  |0.0140|
+
+\n + =*20 + sparsehs + =*20
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=False,sparsehs=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5497|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4827|±  |0.0103|
+|hellaswag     |Yaml   |none  |acc            | 0.3713|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4632|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     | 8.5819|±  |0.2382|
+|              |       |none  |acc            | 0.5513|±  |0.0069|
+|piqa          |Yaml   |none  |acc            | 0.6866|±  |0.0108|
+|              |       |none  |acc_norm       | 0.6839|±  |0.0108|
+|wikitext      |Yaml   |none  |word_perplexity|18.7657|   |      |
+|              |       |none  |byte_perplexity| 1.7303|   |      |
+|              |       |none  |bits_per_byte  | 0.7910|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5643|±  |0.0139|
+
+all: both + sparsedB + sparsehs\n
+bootstrapping for stddev: perplexity
+mamba (pretrained=../sii_lijinhao/models/mamba-370m/,debug=False,sparsedB=True,sparsehs=True,fastexp=True,silu=True), limit: None, num_fewshot: None, batch_size: 64
+|    Tasks     |Version|Filter|    Metric     | Value |   |Stderr|
+|--------------|-------|------|---------------|------:|---|-----:|
+|arc_easy      |Yaml   |none  |acc            | 0.5354|±  |0.0102|
+|              |       |none  |acc_norm       | 0.4634|±  |0.0102|
+|hellaswag     |Yaml   |none  |acc            | 0.3515|±  |0.0048|
+|              |       |none  |acc_norm       | 0.4375|±  |0.0050|
+|lambada_openai|Yaml   |none  |perplexity     |10.4922|±  |0.3067|
+|              |       |none  |acc            | 0.5135|±  |0.0070|
+|piqa          |Yaml   |none  |acc            | 0.6806|±  |0.0109|
+|              |       |none  |acc_norm       | 0.6861|±  |0.0108|
+|wikitext      |Yaml   |none  |word_perplexity|22.9916|   |      |
+|              |       |none  |byte_perplexity| 1.7973|   |      |
+|              |       |none  |bits_per_byte  | 0.8458|   |      |
+|winogrande    |Yaml   |none  |acc            | 0.5493|±  |0.0140|
+

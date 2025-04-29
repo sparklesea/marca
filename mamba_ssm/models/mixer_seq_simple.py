@@ -29,14 +29,17 @@ def create_block(
     residual_in_fp32=False,
     fused_add_norm=False,
     layer_idx=None,
+    marca_args=None,
     device=None,
     dtype=None,
-    debug=False,
+    # debug=False,
+    # sparsedB=False,
+    # sparsehs=False,
 ):
     if ssm_cfg is None:
         ssm_cfg = {}
     factory_kwargs = {"device": device, "dtype": dtype}
-    mixer_cls = partial(Mamba, layer_idx=layer_idx, debug=debug, **ssm_cfg, **factory_kwargs)
+    mixer_cls = partial(Mamba, layer_idx=layer_idx, marca_args=marca_args, **ssm_cfg, **factory_kwargs)
     norm_cls = partial(
         nn.LayerNorm if not rms_norm else RMSNorm, eps=norm_epsilon, **factory_kwargs
     )
@@ -96,9 +99,12 @@ class MixerModel(nn.Module):
         initializer_cfg=None,
         fused_add_norm=False,
         residual_in_fp32=False,
+        marca_args=None,
         device=None,
         dtype=None,
-        debug=False,
+        # debug=False,
+        # sparsedB=False,
+        # sparsehs=False,
     ) -> None:
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
@@ -126,7 +132,10 @@ class MixerModel(nn.Module):
                     residual_in_fp32=residual_in_fp32,
                     fused_add_norm=fused_add_norm,
                     layer_idx=i,
-                    debug=debug,
+                    # debug=debug,
+                    # sparsedB=sparsedB,
+                    # sparsehs=sparsehs,
+                    marca_args=marca_args,
                     **factory_kwargs,
                 )
                 for i in range(n_layer)
@@ -184,7 +193,10 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
         self,
         config: MambaConfig,
         initializer_cfg=None,
-        debug = False,
+        # debug = False,
+        # sparsedB = False,
+        # sparsehs = False,
+        marca_args=None,
         device=None,
         dtype=None,
     ) -> None:
@@ -199,7 +211,7 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
         pad_vocab_size_multiple = config.pad_vocab_size_multiple
         factory_kwargs = {"device": device, "dtype": dtype}
         
-        self.debug = debug
+        self.debug = marca_args.debug
 
         super().__init__()
         if vocab_size % pad_vocab_size_multiple != 0:
@@ -213,7 +225,7 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
             initializer_cfg=initializer_cfg,
             fused_add_norm=fused_add_norm,
             residual_in_fp32=residual_in_fp32,
-            debug = debug,
+            marca_args = marca_args,
             **factory_kwargs,
         )
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False, **factory_kwargs)
@@ -252,20 +264,30 @@ class MambaLMHeadModel(nn.Module, GenerationMixin):
                 
                 count = self.backbone.layers[layer_id].mixer.count
                 
-                # deltaB = self.backbone.layers[layer_id].mixer.deltaB
-                # deltaB = deltaB / torch.tensor(count, device=deltaB.device).view(1,-1,1) 
-                # torch.save(deltaB, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB/all_L/{layer_id}.pt')
+                deltaB = self.backbone.layers[layer_id].mixer.deltaB
+                deltaB = deltaB / torch.tensor(count, device=deltaB.device).view(1,-1,1) 
+                torch.save(deltaB, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaB/all_L/{layer_id}.pt')
                 
                 deltaA = self.backbone.layers[layer_id].mixer.deltaA
                 deltaA = deltaA / torch.tensor(count, device=deltaA.device).view(1,-1,1)
                 torch.save(deltaA, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/deltaA/all_L/{layer_id}.pt')
+                
+                # count_hidden_states = self.backbone.layers[layer_id].mixer.count_hidden_states #(l_profile)
+                # hidden_states_profile = self.backbone.layers[layer_id].mixer.hidden_states #(d, n, l_profile)
+                # hidden_states_profile = hidden_states_profile / torch.tensor(count_hidden_states, device=hidden_states_profile.device).view(1,1,-1)
+                
+                count_hidden_states = self.backbone.layers[layer_id].mixer.count_hs
+                hidden_states_profile = self.backbone.layers[layer_id].mixer.hidden_states
+                hidden_states_profile = hidden_states_profile / torch.tensor(count_hidden_states, device=hidden_states_profile.device).view(1,-1,1)
+                torch.save(hidden_states_profile, f'/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/marca/profile_result/pt/hidden_states/all_L/{layer_id}.pt')
+                
         return CausalLMOutput(logits=lm_logits)
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, debug = False, **kwargs):
+    def from_pretrained(cls, pretrained_model_name, device=None, dtype=None, marca_args=None, **kwargs):
         config_data = load_config_hf(pretrained_model_name)
         config = MambaConfig(**config_data)
-        model = cls(config, device=device, dtype=dtype, debug = debug, **kwargs)
+        model = cls(config, device=device, dtype=dtype, marca_args=marca_args, **kwargs)
         model.load_state_dict(load_state_dict_hf(pretrained_model_name, device=device, dtype=dtype))
         return model
 
