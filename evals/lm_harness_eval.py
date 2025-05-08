@@ -22,9 +22,9 @@ class MambaEvalWrapper(HFLM):
 
     AUTO_MODEL_CLASS = transformers.AutoModelForCausalLM
 
-    def __init__(self, pretrained="state-spaces/mamba-2.8b", max_length=2048, batch_size=None, device="cuda", dtype=torch.float16, debug=False, sparsedB=False, sparsehs=False, fastexp=False, silu=False):
+    def __init__(self, pretrained="state-spaces/mamba-2.8b", max_length=2048, batch_size=None, device="cuda", dtype=torch.float16, debug=False, sparsedB=False, sparsehs=False, fastexp=False, silu=False, predict=False, predictB=False):
         LM.__init__(self)
-        marca_args_dict = {"debug":debug, "sparsedB":sparsedB, "sparsehs":sparsehs, "fastexp":fastexp, "silu":silu}
+        marca_args_dict = {"debug":debug, "sparsedB":sparsedB, "sparsehs":sparsehs, "fastexp":fastexp, "silu":silu, "predict":predict, "predictB":predictB}
         marca_args = argparse.Namespace(**marca_args_dict)
         self._model = MambaLMHeadModel.from_pretrained(pretrained, device=device, dtype=dtype, marca_args=marca_args)
         self.tokenizer = AutoTokenizer.from_pretrained("/inspire/hdd/ws-f4d69b29-e0a5-44e6-bd92-acf4de9990f0/public-project/lijinhao-240108540148/research_huangshan/sii_lijinhao/models/tokenizers/gpt-neox-20b-local-cache/models--EleutherAI--gpt-neox-20b/snapshots/c292233c833e336628618a88a648727eb3dff0a7", local_files_only=True)

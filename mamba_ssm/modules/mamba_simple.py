@@ -127,6 +127,8 @@ class Mamba(nn.Module):
         self.sparseA = False
         self.sparse_hs = marca_args.sparsehs
         self.constant = False
+        self.predicted_hs = marca_args.predict
+        self.predicted_B = marca_args.predictB
         
         #approx
         self.fastexp = marca_args.fastexp
@@ -306,7 +308,7 @@ class Mamba(nn.Module):
             
         else:
             if B.dim() == 3:
-                if not self.sparseA and not self.sparseB and not self.constant:
+                if not self.sparseB and not self.constant and not self.predicted_B:
                     deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
                 
                 if self.debug:
@@ -347,9 +349,9 @@ class Mamba(nn.Module):
                         else:
                             condition = (mask != torch.inf)
                             deltaA = torch.where(condition, mask, deltaA)
-                    # still need to compute deltaB_u
-                    deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
-                elif self.constant:
+                    # # still need to compute deltaB_u
+                    # deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
+                if self.constant:
                     deltaB_constant = self.constant_dB[self.layer_idx].unsqueeze(0).unsqueeze(2).repeat(delta.shape[0], 1, delta.shape[-1], 1)
                     
                     # deltaB = torch.einsum('bdl,bnl->bdln', delta, B)
@@ -358,6 +360,13 @@ class Mamba(nn.Module):
                     # condition = constant_dB_dropout != 0
                     # deltaB_constant = torch.where(condition, constant_dB_dropout, deltaB)
                     deltaB_u = torch.einsum('bdln,bdl->bdln', deltaB_constant, u)
+                if self.predicted_B:
+                    predicted_len = 64
+                    deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
+                    dB_for_predict = torch.einsum('bdl,bnl,bdl->bdln', delta[:, :predicted_len], B, u[:, :predicted_len])
+                    mask = dB_for_predict.std(dim=1, keepdim=True) < 0.001 #(b, 1, l, n)
+                    print(f"layer:{self.layer_idx}, sparsity: {mask.sum() / mask.numel()}", flush=True)
+                    deltaB_u = torch.where(mask, 0, deltaB_u)
             else:
                 B = repeat(B, "B G N L -> B (G H) N L", H=dim // B.shape[1])
                 deltaB_u = torch.einsum('bdl,bdnl,bdl->bdln', delta, B, u)
@@ -366,19 +375,21 @@ class Mamba(nn.Module):
         last_state = None
         
         temp_hidden_states = None
+        
+        sparsity = 0
         for i in range(u.shape[2]): # for each L
             if self.sparse_hs:
-                temp_hs_mask = self.mask_hs[self.layer_idx, i // self.chunk_size]
+                temp_hs_mask = self.mask_hs[self.layer_idx, i // self.chunk_size] #(n)
                 x = torch.where(temp_hs_mask, 0, x)
-            x = deltaA[:, :, i] * x + deltaB_u[:, :, i] #(b, d, n)
             
-            # if self.sparse_hiddens_state:
-                ## dynamic sparse
-                # x_mean = x.mean(0).mean(0)
-                # x_std = x.mean(0).std(dim=0)
-                # mask = (x_mean.abs() < 0.001) & (x_std < 0.001)
-                # print(f"layer: {self.layer_idx}, sparsity: {mask.sum() / mask.numel()}")
-                # x = torch.where(mask, 0, x)
+            if self.predicted_hs:
+                predicted_len = 64
+                h_for_predict = deltaA[:, :predicted_len, i] * x[:, :predicted_len]
+                mask = h_for_predict.std(dim=1, keepdim=True) < 0.0017 #(b, 1, n)
+                # sparsity += mask.sum() / mask.numel()
+                x = torch.where(mask, 0, x)
+            
+            x = deltaA[:, :, i] * x + deltaB_u[:, :, i] #(b, d, n)
             
             # for hidden states profile
             if self.debug:
@@ -399,7 +410,7 @@ class Mamba(nn.Module):
             if y.is_complex():
                 y = y.real * 2
             ys.append(y)
-
+        # print(f"layer:{self.layer_idx}, sparsity: {sparsity / u.shape[2]}", flush=True)
         if self.debug:
             temp_hidden_states, chunk_num = self.average_seqlen_chunk(temp_hidden_states, chunk_size=self.chunk_size)
             
